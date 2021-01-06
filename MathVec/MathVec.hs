@@ -1,8 +1,15 @@
-module MathVec (MathVec) where
+module MathVec.MathVec (MathVec,dot,OffsetMathVec,scaled,chordx,chordy,chordz) where
+
+--this vector class impliments math like number vectors in haskell
 
 --basic implimentation of vectors for storage
 --stores the numbers and the amount of numbers (or dimension)
-data MathVec numType = Chords [numType] deriving (Show)
+--chords is a basic unit vector centered at the origin
+--OffsetChords is a vector centered at the given offset
+data MathVec numType = Chords [numType] deriving (Show,Eq)
+
+--A simple type for a vector which has a positional component
+type OffsetMathVec numType = MathVec numType -> MathVec numType
 
 --ths is a function that performs operations on arrays in parallel
 --think about it as lining up the arrays and then performing
@@ -51,8 +58,8 @@ chordx (Chords (fx:_)) = fx
 chordy (Chords (_:fy:_)) = fy
 chordz (Chords (_:_:fz:_)) = fz
 
-dot :: (Num a,Floating a) => MathVec a -> MathVec a -> a
-dot x y = (chordx (x*y))
-
-scale :: (Num a,Floating a) => a -> MathVec a -> MathVec a
-scale factor (Chords vec) = (Chords [c*factor|c<-vec])
+--syntactic sugar function to get the first chord of the dot product
+dot :: (Num numType,Floating numType) => MathVec numType -> MathVec numType -> numType
+dot v1 v2 = chordx (v1*v2)
+scaled :: (Num a,Floating a) => MathVec a  -> a -> MathVec a
+scaled (Chords vec) factor = (Chords [c*factor|c<-vec])

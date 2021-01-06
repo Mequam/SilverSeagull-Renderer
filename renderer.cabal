@@ -16,17 +16,17 @@ maintainer:          blue9ja@gmail.com
 extra-source-files:  CHANGELOG.md
 
 library
-  exposed-modules:     MyLib
-  -- other-modules:
-  -- other-extensions:
-  build-depends:       JuicyPixels, array, base ^>=4.14.1.0
+  exposed-modules:     GeoShape.Shape
+  other-modules:     MathVec.MathVec
+  --other-extensions:
+  build-depends:       JuicyPixels, base ^>=4.14.1.0
   -- hs-source-dirs:
   default-language:    Haskell2010
 
 executable renderer
   main-is:             Main.hs
-  other-modules:       MyLib
+  other-modules:       GeoShape.Shape
   -- other-extensions:
-  build-depends:       JuicyPixels, base ^>=4.14.1.0, renderer
+  build-depends:       JuicyPixels, base ^>=4.14.1.0
   -- hs-source-dirs:
   default-language:    Haskell2010
