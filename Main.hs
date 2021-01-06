@@ -6,6 +6,7 @@ import Codec.Picture
 import Control.Monad
 import Control.Monad.ST
 import System.Environment (getArgs)
+import GeoShape.PreMade.Sphear
 import qualified Codec.Picture.Types as M
 import qualified GeoShape.Shape (Shape) 
 

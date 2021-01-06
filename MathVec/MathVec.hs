@@ -1,4 +1,4 @@
-module MathVec.MathVec (MathVec,dot,OffsetMathVec,scaled,chordx,chordy,chordz) where
+module MathVec.MathVec (MathVec (Chords),dot,OffsetMathVec,scaled,chords,chordx,chordy,chordz,zipArrays) where
 
 --this vector class impliments math like number vectors in haskell
 
@@ -8,8 +8,8 @@ module MathVec.MathVec (MathVec,dot,OffsetMathVec,scaled,chordx,chordy,chordz) w
 --OffsetChords is a vector centered at the given offset
 data MathVec numType = Chords [numType] deriving (Show,Eq)
 
---A simple type for a vector which has a positional component
-type OffsetMathVec numType = MathVec numType -> MathVec numType
+--A simple type for a vector which has a positional component stored in the second vector of the tuple
+type OffsetMathVec numType = (MathVec numType,MathVec numType)
 
 --ths is a function that performs operations on arrays in parallel
 --think about it as lining up the arrays and then performing
@@ -53,10 +53,11 @@ instance (Num numType,Floating numType) => Num (MathVec numType) where
  --this is actually the dot product of the two vectors
  (*) (Chords arr1) (Chords arr2) = Chords [(sumArr (multParallel arr1 arr2))]
 
-
+--simple syntactic sugar functions for grabbing the arrays
 chordx (Chords (fx:_)) = fx
 chordy (Chords (_:fy:_)) = fy
 chordz (Chords (_:_:fz:_)) = fz
+chords (Chords arr) = arr
 
 --syntactic sugar function to get the first chord of the dot product
 dot :: (Num numType,Floating numType) => MathVec numType -> MathVec numType -> numType

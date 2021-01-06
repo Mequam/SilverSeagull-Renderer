@@ -1,25 +1,18 @@
-module GeoShape.Shape (Shape,reflection) where
+{-# LANGUAGE FlexibleInstances #-} --requred to use our class
+{-# LANGUAGE MultiParamTypeClasses #-} --this is so that we can use
+{-# LANGUAGE FunctionalDependencies #-} --this is so we can tell haskell that the numType is determined by what the shapeType contains
+module GeoShape.Shape (Shape (..),reflection) where
 
-import Codec.Picture (Pixel)
+
 import MathVec.MathVec
-
---this represents textural defaults that the surface of our object can use when reflecting light
---NOTE: a is inteanded to be a pixel type and will primarily be used as such in our later functions
-data LightInfo a = Light a Int
-
---this is the data that we store our objects to render as behind the scenes
---light geo contains light data, and then a geomotry object
---NOTE: shapeType is inteanded to be a shape defined by our shape class
-data CollisionObject lightType shapeType = LightGeo (LightInfo lightType) shapeType
-
-class Shape shapeType where
+class (Ord numType,Num numType,Floating numType) => Shape shapeType numType | shapeType -> numType where
  --gets the position of the shape
- pos :: (Num numType,Floating numType) => shapeType -> MathVec numType
+ pos :: shapeType -> MathVec numType
  --takes a point along the border of the object and returns the normal at that point
- normal :: (Num a,Floating a) => shapeType -> MathVec a -> MathVec a
+ normal :: shapeType -> MathVec numType -> MathVec numType
  --gets the parametric time, if any, that the given direction vector collides with the border
  --the first vector in OffsetChords is the originating position of the second vector 
- colTime :: (Num numType, Fractional numType) => shapeType -> numType -> numType
+ colTime :: shapeType -> OffsetMathVec numType -> Maybe numType
 
 
 --gets the reflected vector given a normal and incoming vector, 
@@ -27,6 +20,3 @@ class Shape shapeType where
 --NOTE: incoming here is centered on the collision point with the normal and going twoards it
 reflection :: (Num numType,Floating numType) => MathVec numType -> MathVec numType -> MathVec numType
 reflection normal incoming = incoming-(((normal `scaled` (normal`dot`incoming)) `scaled` 2))
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"

@@ -25,7 +25,7 @@ library
 
 executable renderer
   main-is:             Main.hs
-  other-modules:       GeoShape.Shape
+  other-modules:       MathVec.MathVec,GeoShape.PreMade.Sphear,GeoShape.Shape
   -- other-extensions:
   build-depends:       JuicyPixels, base ^>=4.14.1.0
   -- hs-source-dirs:
