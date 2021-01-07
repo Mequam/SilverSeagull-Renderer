@@ -2,7 +2,7 @@
 {-#Language MultiParamTypeClasses#-}
 {-#Language FlexibleContexts#-}
 
-module GeoShape.PreMade.Sphear (Shape,reflection) where
+module GeoShape.PreMade.Sphear (Sphear (..)) where
 
 import GeoShape.Shape
 import MathVec.MathVec
@@ -57,7 +57,3 @@ lesserTup Nothing = Nothing
 --singleQuad = (greaterTup.(posTup.(wrapMaybeTup.quad)))
 --singleQuad :: (Ord numType,Num numType,Floating numType) => numType -> numType -> numType -> Maybe numType
 singleQuad a b c = lesserTup (posTup (wrapMaybeTup (quad a b c)))
-
---for debuging with ghci
-circle = (RadiusPos 3 (Chords [0,0]))
-offsetRay = ((Chords [(-1),(-4)]),(Chords [4,10])) 
