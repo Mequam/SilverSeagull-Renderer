@@ -15,9 +15,9 @@ sumArr arr = foldr1 (+) arr
 instance (Ord numType,Num numType, Floating numType) => Shape (Sphear numType) numType where 
  pos (Radius _) = (Chords [0])
  pos (RadiusPos _ pos) = pos
- normal (RadiusPos r pos) incidentPoint = ((incidentPoint-(pos)) `scaled` r)
- colTime (RadiusPos r pos) (x,y) = colTime (Radius r) (x,(y-pos)) --perform the calculation after re-centering everything
- colTime (Radius r) ((Chords dir),(Chords pos)) = singleQuad a b c where (a,b,c) = (sumArr [n^2|n<-dir],sumArr (zipArrays ((*).(*2)) dir pos),(sumArr [p^2|p<-pos])-r^2)
+ normal (RadiusPos r pos) incidentPoint = ((incidentPoint-(pos)) `scaled` r) 
+ colTimeLocal (RadiusPos r pos) offsetVec = colTimeLocal (Radius r) offsetVec
+ colTimeLocal (Radius r) ((Chords dir),(Chords pos)) = singleQuad a b c where (a,b,c) = (sumArr [n^2|n<-dir],sumArr (zipArrays ((*).(*2)) dir pos),(sumArr [p^2|p<-pos])-r^2)
 
 --implimentation of the quadratic formula
 quad :: (Ord numType,Num numType,Floating numType) => numType -> numType -> numType -> Maybe (numType,numType)

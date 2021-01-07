@@ -11,8 +11,13 @@ class (Ord numType,Num numType,Floating numType) => Shape shapeType numType | sh
  --takes a point along the border of the object and returns the normal at that point
  normal :: shapeType -> MathVec numType -> MathVec numType
  --gets the parametric time, if any, that the given direction vector collides with the border
- --the first vector in OffsetChords is the originating position of the second vector 
+ --the second vector in OffsetMathVec is the position, with the first bieng the dir 
+ --finds the collision time if the shape is centered on the origin
+ colTimeLocal :: shapeType -> OffsetMathVec numType -> Maybe numType
+ --generalization of the above function that works for shapes at any pos
+ --this function really doesn't have to be defined by the type instance
  colTime :: shapeType -> OffsetMathVec numType -> Maybe numType
+ colTime s (vecDir,vecPos) = colTimeLocal s (vecDir,vecPos - (pos s))
 
 
 --gets the reflected vector given a normal and incoming vector, 
