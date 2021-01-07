@@ -18,6 +18,10 @@ class (Ord numType,Num numType,Floating numType) => Shape shapeType numType | sh
  normal :: shapeType -> MathVec numType -> MathVec numType
  normal s colPoint = normalLocal s (colPoint - (pos s)) 
  
+ --returns the normal and the position that it is located at
+ positionalNormal :: shapeType -> MathVec numType -> OffsetMathVec numType
+ positionalNormal s colPoint = ((normal s colPoint),(colPoint))
+
  --gets the parametric time, if any, that the given direction vector collides with the border
  --the second vector in OffsetMathVec is the position, with the first bieng the dir 
  --finds the collision time if the shape is centered on the origin

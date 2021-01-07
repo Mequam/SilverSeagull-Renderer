@@ -36,12 +36,12 @@ wrapMaybeTup Nothing = Nothing
 --returns only posotive values from a either a tuple of values or a single value
 posTup :: (Ord numType,Num numType) => Maybe (Either numType (numType,numType)) -> Maybe (Either numType (numType,numType))
 posTup (Just (Left x))
- | x >= 0 = (Just (Left x))
+ | x > 0 = (Just (Left x))
  | otherwise = Nothing
 posTup (Just (Right (x,y)))
- | x >= 0 && y >= 0 = (Just (Right (x,y)))
- | y >= 0 = (Just (Left y))
- | x >= 0 = (Just (Left x))
+ | x > 0 && y >= 0 = (Just (Right (x,y)))
+ | y > 0 = (Just (Left y))
+ | x > 0 = (Just (Left x))
  | otherwise = Nothing
 posTup Nothing = Nothing
 
