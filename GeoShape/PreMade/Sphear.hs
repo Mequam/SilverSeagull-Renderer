@@ -15,7 +15,8 @@ sumArr arr = foldr1 (+) arr
 instance (Ord numType,Num numType, Floating numType) => Shape (Sphear numType) numType where 
  pos (Radius _) = (Chords [0])
  pos (RadiusPos _ pos) = pos
- normal (RadiusPos r pos) incidentPoint = ((incidentPoint-(pos)) `scaled` r) 
+ normalLocal (Radius r) incidentPoint = signum incidentPoint
+ normalLocal (RadiusPos r pos) ip = normalLocal (Radius r) ip
  colTimeLocal (RadiusPos r pos) offsetVec = colTimeLocal (Radius r) offsetVec
  colTimeLocal (Radius r) ((Chords dir),(Chords pos)) = singleQuad a b c where (a,b,c) = (sumArr [n^2|n<-dir],sumArr (zipArrays ((*).(*2)) dir pos),(sumArr [p^2|p<-pos])-r^2)
 
@@ -55,20 +56,8 @@ lesserTup Nothing = Nothing
 --takes a quadradic and returns only the (greatest, positive value) or nothing
 --singleQuad = (greaterTup.(posTup.(wrapMaybeTup.quad)))
 --singleQuad :: (Ord numType,Num numType,Floating numType) => numType -> numType -> numType -> Maybe numType
-singleQuad a b c = lesserTup (posTup (wrapMaybeTup (quad a b c))) 
+singleQuad a b c = lesserTup (posTup (wrapMaybeTup (quad a b c)))
 
---class Shape shapeType where
- --gets the position of the shape
--- pos :: (Num numType,Floating numType) => shapeType -> MathVec numType
- --takes a point along the border of the object and returns the normal at that point
--- normal :: (Num a,Floating a) => shapeType -> MathVec a -> MathVec a
- --gets the parametric time, if any, that the given direction vector collides with the border
- --the first vector in OffsetChords is the originating position of the second vector 
--- colTime :: (Num numType, Fractional numType) => shapeType -> numType -> numType
-
-
---gets the reflected vector given a normal and incoming vector, 
---arguments are as follows: normal,incoming vector, outgoing vector
---NOTE: incoming here is centered on the collision point with the normal and going twoards it
---reflection :: (Num numType,Floating numType) => MathVec numType -> MathVec numType -> MathVec numType
---reflection normal incoming = incoming-(((normal `scaled` (normal`dot`incoming)) `scaled` 2))
+--for debuging with ghci
+circle = (RadiusPos 3 (Chords [0,0]))
+offsetRay = ((Chords [(-1),(-4)]),(Chords [4,10])) 

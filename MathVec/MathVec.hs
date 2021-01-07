@@ -1,4 +1,4 @@
-module MathVec.MathVec (MathVec (Chords),dot,OffsetMathVec,scaled,chords,chordx,chordy,chordz,zipArrays) where
+module MathVec.MathVec (MathVec (Chords),dot,OffsetMathVec,scaled,chords,chordx,chordy,chordz,zipArrays,offsetScaled,fromOffset,fromOffsetScaled,offsetDir,offsetPos) where
 
 --this vector class impliments math like number vectors in haskell
 
@@ -62,5 +62,29 @@ chords (Chords arr) = arr
 --syntactic sugar function to get the first chord of the dot product
 dot :: (Num numType,Floating numType) => MathVec numType -> MathVec numType -> numType
 dot v1 v2 = chordx (v1*v2)
+
+--scale a vector by a scalar
 scaled :: (Num a,Floating a) => MathVec a  -> a -> MathVec a
 scaled (Chords vec) factor = (Chords [c*factor|c<-vec])
+
+--scale an offset vector
+offsetScaled :: (Num a,Floating a) => OffsetMathVec a -> a -> OffsetMathVec a
+offsetScaled (dir,pos) factor = (dir `scaled` factor,pos)
+
+--convert an offset vector to a normal vector
+fromOffset :: (Num a, Floating a) => OffsetMathVec a -> MathVec a
+fromOffset (dir,pos) = dir+pos
+
+--scales an offset vector and returns the point that the vector head lands on
+--syntactic sugar combination of the above functions
+fromOffsetScaled :: (Num a, Floating a) => OffsetMathVec a -> a -> MathVec a
+fromOffsetScaled ovec factor = fromOffset (offsetScaled ovec factor)
+
+
+--pattern matching functions for the offsetDir
+offsetDir :: (Num a, Floating a) => OffsetMathVec a -> MathVec a
+offsetDir (dir,_) = dir
+
+offsetPos :: (Num a, Floating a) => OffsetMathVec a -> MathVec a
+offsetPos (_,pos) = pos
+
