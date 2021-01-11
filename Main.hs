@@ -16,9 +16,13 @@ import GeoShape.Shape
 import GeoShape.PreMade.Sphear
 import MathVec.MathVec
 
-data Texture = ReflectionColor Float PixelRGB8 | Color PixelRGB8 | Nada deriving (Show,Eq)
-data RenderObj shapeObj = ShapeTexture shapeObj Texture deriving (Show,Eq)
+data Texture = ColorArr [PixelRGB8] | ReflectionColor Float PixelRGB8 | Color PixelRGB8 | Nada deriving (Show,Eq)
+data RenderObj shapeObj = ShapeTextureShade shapeObj Texture (Shader)
 
+instance (Eq a) => Eq (RenderObj a) where
+ (==) (ShapeTextureShade s1 t1 _) (ShapeTextureShade s2 t2 _) = s1==s2 && t1==t2
+instance (Show a) => Show (RenderObj a) where
+ show (ShapeTextureShade s1 t1 _) = "ShapeTextureShader ("++(show s1) ++ ") (" ++ (show t1) ++ ")"
 textColor :: Texture -> PixelRGB8
 textColor (ReflectionColor _ c) = c
 textColor (Color c) = c --the given color
@@ -29,7 +33,7 @@ textReflectionFact (ReflectionColor rf _) = rf
 textReflectionFact _ = 0
 
 rendText :: RenderObj a -> Texture
-rendText (ShapeTexture _ t) = t
+rendText (ShapeTextureShade _ t _) = t
 
 scaleColor :: Float -> PixelRGB8 -> PixelRGB8
 scaleColor f (PixelRGB8 r g b) = PixelRGB8 (scaleword f r) (scaleword f g) (scaleword f b) where scaleword x y = round ((fromIntegral y)*x)
@@ -43,9 +47,18 @@ addWordsCeil x y
  where
   intTotal = (fromIntegral x) + (fromIntegral y)
 
+
+
+--(absorbColor (textColor t) ambientColor) 
+--
+
+--custom Shaders
+mainShader :: Texture -> PixelRGB8 -> PixelRGB8
+mainShader t lc = addColor (absorbColor (textColor t) ambientColor) (scaleColor (textReflectionFact t) lc) where ambientColor = PixelRGB8 150 150 150 
+ 
 main :: IO ()
 main = do  
- let shapes = [(ShapeTexture (RadiusPos 5 (Chords [(0),(0),25])) (Color (PixelRGB8 50 50 50))),(ShapeTexture (RadiusPos 20 (Chords [(15),0,50])) (ReflectionColor 0.5 (PixelRGB8 0 0 255))),(ShapeTexture (RadiusPos 20 (Chords [(-15),0,50])) (ReflectionColor 0.1 (PixelRGB8 10 10 10)))] 
+ let shapes = [(ShapeTextureShade (RadiusPos 1 (Chords [0,(-1),(5)])) (ReflectionColor 0.25 (PixelRGB8 0 0 200)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [0,1,(5)])) (ReflectionColor 1 (PixelRGB8 0 0 0)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [2,(0),(5)])) (ReflectionColor 0.25 (PixelRGB8 200 0 0)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [(-2),(0),(5)])) (ReflectionColor 0.25 (PixelRGB8 0 200 0)) (mainShader))] 
  
  --debug code
  putStrLn (show (addColor (PixelRGB8 255 255 255) (absorbColor (PixelRGB8 0 0 255) (absorbColor (PixelRGB8 255 0 0) (PixelRGB8 255 255 255))))) 
@@ -53,21 +66,21 @@ main = do
  --					generateImae creates a "specific image" class, the ImageRGB8 is a constructor for the generic image data type
  --					that "tags" the image so other parts of the libary know what they are looking at
  --					this creates a DynamicImage that can be used elsewhere with many different functions regaurldess of the underlying type
- savePngImage "./test.png" (ImageRGB8 (generateImage (generator shapes (400) (-500) (-500)) 1000 1000))
+ savePngImage "./test.png" (ImageRGB8 (generateImage (generator shapes (1000) (-500) (-500)) 1000 1000))
 
 --gets the shape that we collide with and the time of that collision
 colTimeShapes :: (Shape st a,Eq st) => [RenderObj st] -> OffsetMathVec a -> Maybe (a,RenderObj st)
-colTimeShapes ((ShapeTexture fs ftext):shapeArr) ray
+colTimeShapes ((ShapeTextureShade fs ftext shade):shapeArr) ray
  | time == Nothing = nextItr --every collision to the right and ours missed
- | nextItr == Nothing = Just (fromJust time,ShapeTexture fs ftext) --our collision is the only collision so far 
- | (fromJust time) < (fst (fromJust nextItr)) = Just (fromJust time,ShapeTexture fs ftext) --found two collisions, return the smaller 
+ | nextItr == Nothing = Just (fromJust time,ShapeTextureShade fs ftext shade) --our collision is the only collision so far 
+ | (fromJust time) < (fst (fromJust nextItr)) = Just (fromJust time,ShapeTextureShade fs ftext shade) --found two collisions, return the smaller 
  | otherwise = nextItr 
  where
   time = (colTime fs ray)
   nextItr = colTimeShapes shapeArr ray
-colTimeShapes [ShapeTexture fs ftext] ray --exit condition
+colTimeShapes [ShapeTextureShade fs ftext shade] ray --exit condition
  | time == Nothing = Nothing
- | otherwise = Just (fromJust time,ShapeTexture fs ftext)
+ | otherwise = Just (fromJust time,ShapeTextureShade fs ftext shade)
  where
   time = (colTime fs ray)
 colTimeShapes [] _ = Nothing --just in case
@@ -80,15 +93,17 @@ colTimeShapes [] _ = Nothing --just in case
 absorbColor :: PixelRGB8 -> PixelRGB8 -> PixelRGB8
 absorbColor (PixelRGB8 r g b) (PixelRGB8 rl gl bl) = (PixelRGB8 (multColorChord r rl) (multColorChord g gl) (multColorChord b bl)) where multColorChord a b = round ((fromIntegral a)*(fromIntegral b)/255)
 
+type Shader = Texture -> PixelRGB8 -> PixelRGB8 
+
+
 --we need a function that merges colors
 --this function recursivly bounces a ray of light around the scene and returns the color from the light
 bounceRay :: (Shape st a,Num a,Eq st) => Integer -> Integer -> [RenderObj st] -> OffsetMathVec a -> Maybe (a,RenderObj st) -> PixelRGB8
-bounceRay maxCount count shapes ray (Just (time,ShapeTexture s t))
- | count >= maxCount || nextCol == Nothing = (absorbColor (textColor t) ambientColor)
- | otherwise = addColor (absorbColor (textColor t) ambientColor) (scaleColor (textReflectionFact t) (bounceRay maxCount (count+1) shapes reflectedRay nextCol))
+bounceRay maxCount count shapes ray (Just (time,ShapeTextureShade s t shapeShader))
+ | count >= maxCount || nextCol == Nothing = shapeShader t lightColor
+ | otherwise = shapeShader t (bounceRay maxCount (count+1) shapes reflectedRay nextCol)
  where
-  ambientColor = (PixelRGB8 255 100 100)
-  lightColor = (PixelRGB8 255 255 255)
+  lightColor = (PixelRGB8 0 0 0) 
   colPoint = ray `fromOffsetScaled` time --get the point of the collision by scaling the ray to the time that we hit
   reflectedDir = reflection (normal s colPoint) (offsetDir ray) 
   reflectedRay = (reflectedDir,colPoint+(signum reflectedDir) `scaled` 0.1)
