@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-} --requred to use our class
+{-# LANGUAGE MultiParamTypeClasses #-} --this is so that we can use
 {-# LANGUAGE FunctionalDependencies #-} --this is so we can tell haskell that the numType is determined by what the shapeType contains
 
 module Main where
@@ -14,10 +16,23 @@ import qualified Codec.Picture.Types as M
 
 import GeoShape.Shape 
 import GeoShape.PreMade.Sphear
+import GeoShape.PreMade.Plane
 import MathVec.MathVec
 
 data Texture = ColorArr [PixelRGB8] | ReflectionColor Float PixelRGB8 | Color PixelRGB8 | Nada deriving (Show,Eq)
-data RenderObj shapeObj = ShapeTextureShade shapeObj Texture (Shader)
+--container for shapes that we support
+data SupportedShape a = Circle (Sphear a) | Surface (Plane a) deriving (Show,Eq)
+
+data RenderObj a = ShapeTextureShade (SupportedShape a) Texture (Shader)
+
+--theres got to be a better way to do this
+instance (Ord a,Num a,Floating a) => Shape (SupportedShape a) a where
+ pos (Circle s) = pos s
+ pos (Surface s) = pos s
+ normalLocal (Surface s) = normalLocal s
+ normalLocal (Circle s) = normalLocal s
+ colTimeLocal (Surface s) = colTimeLocal s
+ colTimeLocal (Circle s) = colTimeLocal s
 
 instance (Eq a) => Eq (RenderObj a) where
  (==) (ShapeTextureShade s1 t1 _) (ShapeTextureShade s2 t2 _) = s1==s2 && t1==t2
@@ -58,18 +73,19 @@ mainShader t lc = addColor (absorbColor (textColor t) ambientColor) (scaleColor 
  
 main :: IO ()
 main = do  
- let shapes = [(ShapeTextureShade (RadiusPos 1 (Chords [0,(-1),(5)])) (ReflectionColor 0.25 (PixelRGB8 0 0 200)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [0,1,(5)])) (ReflectionColor 1 (PixelRGB8 0 0 0)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [2,(0),(5)])) (ReflectionColor 0.25 (PixelRGB8 200 0 0)) (mainShader)),(ShapeTextureShade (RadiusPos 1 (Chords [(-2),(0),(5)])) (ReflectionColor 0.25 (PixelRGB8 0 200 0)) (mainShader))] 
+ --let shapes = [(ShapeTextureShade (Surface (InfinitPlane 1 (-5))) (ReflectionColor 0.25 (PixelRGB8 0 0 200)) (mainShader))] 
+ let shapes = [(ShapeTextureShade (Surface (InfinitPlane 1 (2))) (ReflectionColor 0.8 (PixelRGB8 10 10 10)) (mainShader)),(ShapeTextureShade (Circle (RadiusPos 1 (Chords [0,(-1),(5)]))) (ReflectionColor 0.25 (PixelRGB8 0 0 200)) (mainShader)),(ShapeTextureShade (Circle (RadiusPos 1 (Chords [0,1,(5)]))) (ReflectionColor 1 (PixelRGB8 150 150 150)) (mainShader)),(ShapeTextureShade (Circle (RadiusPos 1 (Chords [2,(0),(5)]))) (ReflectionColor 0.25 (PixelRGB8 200 0 0)) (mainShader)),(ShapeTextureShade (Circle (RadiusPos 1 (Chords [(-2),(0),(5)]))) (ReflectionColor 0.25 (PixelRGB8 0 200 0)) (mainShader))] 
  
- --debug code
- putStrLn (show (addColor (PixelRGB8 255 255 255) (absorbColor (PixelRGB8 0 0 255) (absorbColor (PixelRGB8 255 0 0) (PixelRGB8 255 255 255))))) 
+ --debug code 
+ putStrLn (show (colTime (InfinitPlane 0 (-2)) ((Chords [1,0]),(Chords [0,0]))))
  putStrLn "[*] beginning render..." 
  --					generateImae creates a "specific image" class, the ImageRGB8 is a constructor for the generic image data type
  --					that "tags" the image so other parts of the libary know what they are looking at
  --					this creates a DynamicImage that can be used elsewhere with many different functions regaurldess of the underlying type
- savePngImage "./test.png" (ImageRGB8 (generateImage (generator shapes (1000) (-500) (-500)) 1000 1000))
+ savePngImage "./test.png" (ImageRGB8 (generateImage (generator shapes (1000) (-1000) (-500)) 2000 2000))
 
 --gets the shape that we collide with and the time of that collision
-colTimeShapes :: (Shape st a,Eq st) => [RenderObj st] -> OffsetMathVec a -> Maybe (a,RenderObj st)
+colTimeShapes :: (Num a,Ord a,Floating a,Eq a) => [RenderObj a] -> OffsetMathVec a -> Maybe (a,RenderObj a)
 colTimeShapes ((ShapeTextureShade fs ftext shade):shapeArr) ray
  | time == Nothing = nextItr --every collision to the right and ours missed
  | nextItr == Nothing = Just (fromJust time,ShapeTextureShade fs ftext shade) --our collision is the only collision so far 
@@ -98,7 +114,7 @@ type Shader = Texture -> PixelRGB8 -> PixelRGB8
 
 --we need a function that merges colors
 --this function recursivly bounces a ray of light around the scene and returns the color from the light
-bounceRay :: (Shape st a,Num a,Eq st) => Integer -> Integer -> [RenderObj st] -> OffsetMathVec a -> Maybe (a,RenderObj st) -> PixelRGB8
+bounceRay :: (Num a,Eq a,Ord a,Floating a) => Integer -> Integer -> [RenderObj a] -> OffsetMathVec a -> Maybe (a,RenderObj a) -> PixelRGB8
 bounceRay maxCount count shapes ray (Just (time,ShapeTextureShade s t shapeShader))
  | count >= maxCount || nextCol == Nothing = shapeShader t lightColor
  | otherwise = shapeShader t (bounceRay maxCount (count+1) shapes reflectedRay nextCol)
@@ -112,7 +128,7 @@ bounceRay _ _ _ _ Nothing = (PixelRGB8 255 0 0) --TODO: this is where we need to
 
 --this function is used in a higher order function to determin the color
 --of the pixel chord
-generator :: (Shape st a,Num a,Eq st) => [RenderObj st] -> a -> Int -> Int -> Int -> Int-> PixelRGB8
+generator :: (Num a,Floating a,Ord a,Eq a) => [RenderObj a] -> a -> Int -> Int -> Int -> Int-> PixelRGB8
 generator renderObjects camaraDist xoff yoff x y
  | col == Nothing = PixelRGB8 0 0 0 --we hit nothing, darkness consumes *^*
  | otherwise = bounceRay 100 0 renderObjects ray col

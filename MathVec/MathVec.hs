@@ -1,4 +1,4 @@
-module MathVec.MathVec (MathVec (Chords),dot,OffsetMathVec,scaled,chords,chordx,chordy,chordz,zipArrays,offsetScaled,fromOffset,fromOffsetScaled,offsetDir,offsetPos) where
+module MathVec.MathVec (MathVec (Chords),chordVec,vecDim,unitVec,dot,OffsetMathVec,scaled,chords,chordx,chordy,chordz,zipArrays,offsetScaled,fromOffset,fromOffsetScaled,offsetDir,offsetPos) where
 
 --this vector class impliments math like number vectors in haskell
 
@@ -40,6 +40,10 @@ sumArr = foldr1 (+)
 --gets the distance of an array
 distArr :: (Num a,Floating a) => [a] -> a
 distArr arr = sqrt (sumArr [c^2 | c<-arr])
+
+--counts the number of elements in an array
+countArr :: [a] -> Int
+countArr arr = (foldr1 (+) [1 | x<-arr])
 
 instance (Num numType,Floating numType) => Num (MathVec numType) where
  (+) (Chords (arrV1)) (Chords (arrV2)) = Chords (sumParallel arrV1 arrV2)
@@ -88,3 +92,19 @@ offsetDir (dir,_) = dir
 offsetPos :: (Num a, Floating a) => OffsetMathVec a -> MathVec a
 offsetPos (_,pos) = pos
 
+--generates a vector with only one dimension that is scaled in that one dimenson
+unitVec :: (Eq a,Num a,Floating a) => Int -> MathVec a
+unitVec 0 = (Chords [1])
+unitVec x = (Chords (0:arrPrev)) where (Chords arrPrev) = unitVec (x-1)
+
+vecDim :: MathVec a -> Int
+vecDim (Chords arr) = countArr arr 
+
+--can be thought of as the indexer of the vector, returns the chordinent at the index of vector
+--NOTE: these vectors can be concidered zero indexed, that is to say if the number is not listed
+--then it is concidered to be zero (the first number listed is the x chord, then y , then z, ect.) all
+-- unlisted chords are concidered zero
+chordVec :: (Eq a,Num a,Floating a) => Int -> MathVec a -> a
+chordVec chord (Chords arr) 
+ | countArr arr > chord = arr!!chord
+ | otherwise = 0
